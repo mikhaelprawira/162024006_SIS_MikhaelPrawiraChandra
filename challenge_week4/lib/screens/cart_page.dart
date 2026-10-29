@@ -4,11 +4,13 @@ import '../models/cart_item.dart';
 class CartPage extends StatefulWidget {
   final List<CartItem> cartItems;
   final Function(String) onRemoveFromCart;
+  final VoidCallback onClearCart;
 
   const CartPage({
     super.key,
     required this.cartItems,
     required this.onRemoveFromCart,
+    required this.onClearCart,
   });
 
   @override
@@ -16,25 +18,22 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  // Key untuk validasi Form[cite: 1]
   final _formKey = GlobalKey<FormState>();
-  
-  // Controller untuk input pengguna
   final _namaController = TextEditingController();
-  final _mejaController = TextEditingController();
+  final _catatanController = TextEditingController();
 
   @override
   void dispose() {
     _namaController.dispose();
-    _mejaController.dispose();
+    _catatanController.dispose();
     super.dispose();
   }
 
   String formatRupiah(int price) {
     return 'Rp${price.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    )}';
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => '.',
+        )}';
   }
 
   int get totalPrice {
@@ -49,30 +48,35 @@ class _CartPageState extends State<CartPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Keranjang masih kosong'),
+          backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
-    // Hanya proses checkout jika validasi form berhasil[cite: 1]
     if (_formKey.currentState!.validate()) {
       showDialog(
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Checkout Berhasil'),
+            backgroundColor: const Color(0xFF1E293B),
+            title: const Text('Checkout Berhasil', style: TextStyle(color: Colors.white)),
             content: Text(
-              'Terima kasih telah memesan di Warung IS.\n'
-              'Nama: ${_namaController.text}\n'
-              'Meja: ${_mejaController.text}\n'
-              'Total pembayaran: ${formatRupiah(totalPrice)}',
+              'Terima kasih telah memesan di NexPlay.\n\n'
+              'Nama Pembeli: ${_namaController.text}\n'
+              'Catatan/Alamat: ${_catatanController.text}\n'
+              'Total Pembayaran: ${formatRupiah(totalPrice)}',
+              style: const TextStyle(color: Color(0xFF94A3B8)),
             ),
             actions: [
               TextButton(
                 onPressed: () {
                   Navigator.pop(dialogContext);
+                  widget.onClearCart();
+                  _namaController.clear();
+                  _catatanController.clear();
                 },
-                child: const Text('OK'),
+                child: const Text('OK', style: TextStyle(color: Color(0xFF3B82F6))),
               ),
             ],
           );
@@ -84,24 +88,26 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: const Text('Keranjang Belanja'),
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text('Keranjang Belanja', style: TextStyle(color: Colors.white)),
         centerTitle: true,
       ),
       body: widget.cartItems.isEmpty
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children: const [
                   Icon(
                     Icons.shopping_cart_outlined,
                     size: 80,
-                    color: Colors.grey,
+                    color: Color(0xFF94A3B8),
                   ),
                   SizedBox(height: 10),
                   Text(
                     'Keranjang masih kosong',
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 18, color: Color(0xFF94A3B8)),
                   ),
                 ],
               ),
@@ -112,26 +118,39 @@ class _CartPageState extends State<CartPage> {
               itemBuilder: (context, index) {
                 final item = widget.cartItems[index];
 
-                return Card(
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: ListTile(
-                    leading: Image.asset(
-                      item.drink.imageUrl,
-                      width: 45,
-                      height: 45,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.local_cafe),
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        item.drink.imageUrl,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.sports_esports, color: Colors.grey),
+                      ),
                     ),
-                    title: Text(item.drink.name),
-                    subtitle: Text(
-                      '${item.quantity} x '
-                      '${formatRupiah(item.drink.price)}\n'
-                      'Subtotal: ${formatRupiah(item.drink.price * item.quantity)}',
+                    title: Text(item.drink.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Text(
+                        '${item.quantity} x ${formatRupiah(item.drink.price)}\n'
+                        'Subtotal: ${formatRupiah(item.drink.price * item.quantity)}',
+                        style: const TextStyle(color: Color(0xFF94A3B8)),
+                      ),
                     ),
                     isThreeLine: true,
                     trailing: IconButton(
                       icon: const Icon(
                         Icons.delete,
-                        color: Colors.red,
+                        color: Colors.redAccent,
                       ),
                       onPressed: () {
                         widget.onRemoveFromCart(item.drink.id);
@@ -141,88 +160,98 @@ class _CartPageState extends State<CartPage> {
                 );
               },
             ),
-      // Menampilkan Form di bagian bawah jika keranjang tidak kosong[cite: 1]
       bottomNavigationBar: widget.cartItems.isEmpty
           ? null
           : SafeArea(
-              child: Padding(
+              child: Container(
                 padding: EdgeInsets.only(
                   left: 16,
                   right: 16,
                   top: 16,
                   bottom: MediaQuery.of(context).viewInsets.bottom + 16,
                 ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E293B),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Form Nama Pemesan[cite: 1]
                       TextFormField(
                         controller: _namaController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nama Pemesan',
-                          border: OutlineInputBorder(),
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Nama Pembeli',
+                          labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Nama Pemesan tidak boleh kosong'; //[cite: 1]
+                            return 'Nama pembeli tidak boleh kosong';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
-                      
-                      // Form Nomor Meja[cite: 1]
                       TextFormField(
-                        controller: _mejaController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nomor Meja',
-                          border: OutlineInputBorder(),
+                        controller: _catatanController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: 'Catatan Pengiriman / Alamat',
+                          labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
                         ),
-                        keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Nomor Meja harus berupa angka'; //[cite: 1]
+                            return 'Catatan atau alamat tidak boleh kosong';
                           }
-                          
-                          final int? nomorMeja = int.tryParse(value);
-                          if (nomorMeja == null) {
-                            return 'Nomor Meja harus berupa angka'; //[cite: 1]
-                          }
-                          
-                          if (nomorMeja < 1 || nomorMeja > 20) {
-                            return 'Nomor Meja harus antara 1-20'; //[cite: 1]
-                          }
-                          
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
-                      
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'Total Pembayaran',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 16, color: Color(0xFF94A3B8)),
                           ),
                           Text(
                             formatRupiah(totalPrice),
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
+                              color: Color(0xFF3B82F6),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
-                        height: 48,
+                        height: 52,
                         child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
                           onPressed: () => checkout(context),
-                          child: const Text('Checkout'),
+                          child: const Text('Checkout', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

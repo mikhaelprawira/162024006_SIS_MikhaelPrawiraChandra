@@ -36,13 +36,13 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/cafe.png',
+              'assets/NexPlay.png',
               width: 150,
               height: 150,
             ),
             const SizedBox(height: 20),
             const Text(
-              'Warung IS',
+              'NexPlay',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

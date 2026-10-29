@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../models/drink.dart';
 
@@ -7,132 +6,169 @@ class DrinkDetailPage extends StatefulWidget {
   final Function(Drink, int) onAddToCart;
 
   const DrinkDetailPage({
-    super.key,
+    Key? key,
     required this.drink,
     required this.onAddToCart,
-  });
+  }) : super(key: key);
 
   @override
-  State<DrinkDetailPage> createState() =>
-      _DrinkDetailPageState();
+  DrinkDetailPageState createState() => DrinkDetailPageState();
 }
 
-class _DrinkDetailPageState
-    extends State<DrinkDetailPage> {
+class DrinkDetailPageState extends State<DrinkDetailPage> {
   int _quantity = 1;
 
-  String formatRupiah(int price) {
-    return 'Rp${price.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
-    )}';
+  void incrementQuantity() {
+    setState(() {
+      _quantity++;
+    });
+  }
+
+  void decrementQuantity() {
+    setState(() {
+      if (_quantity > 1) {
+        _quantity--;
+      }
+    });
+  }
+
+  void _showSuccessDialog(BuildContext context, String foodName, int quantity) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('Berhasil Ditambahkan', style: TextStyle(color: Colors.white)),
+          content: Text('Anda telah menambahkan $foodName ($quantity unit) ke keranjang.', style: const TextStyle(color: Color(0xFF94A3B8))),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK', style: TextStyle(color: Color(0xFF3B82F6))),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final drink = widget.drink;
-
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: const Text('Detail Minuman'),
-        centerTitle: true,
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text(widget.drink.name, style: const TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      body: Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            DrinkInfoCard(drink: widget.drink),
             const SizedBox(height: 30),
-            Image.asset(
-              drink.imageUrl,
-              width: 150,
-              height: 150,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.local_cafe,
-                size: 120,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              drink.name,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const Text('Jumlah Unit:', style: TextStyle(fontSize: 22, color: Colors.white)),
             const SizedBox(height: 10),
-            Text(
-              formatRupiah(drink.price),
-              style: const TextStyle(
-                fontSize: 20,
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text('Minuman pilihan Warung IS'),
-            const Spacer(),
-            const Text(
-              'Jumlah Pesanan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  onPressed: _quantity > 1
-                      ? () {
-                          setState(() {
-                            _quantity--;
-                          });
-                        }
-                      : null,
-                  icon: const Icon(
-                    Icons.remove_circle,
-                    color: Colors.red,
-                  ),
-                  iconSize: 35,
+                  icon: const Icon(Icons.remove_circle),
+                  onPressed: decrementQuantity,
+                  iconSize: 40,
+                  color: Colors.redAccent,
                 ),
+                const SizedBox(width: 20),
                 Text(
                   '$_quantity',
-                  style: const TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
+                const SizedBox(width: 20),
                 IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _quantity++;
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.add_circle,
-                    color: Colors.green,
-                  ),
-                  iconSize: 35,
+                  icon: const Icon(Icons.add_circle),
+                  onPressed: incrementQuantity,
+                  iconSize: 40,
+                  color: Colors.greenAccent,
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 40),
             SizedBox(
-              width: double.infinity,
-              height: 48,
+              width: 250,
+              height: 52,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
                 onPressed: () {
-                  widget.onAddToCart(
-                    widget.drink,
-                    _quantity,
-                  );
-                  Navigator.pop(context);
+                  widget.onAddToCart(widget.drink, _quantity);
+                  _showSuccessDialog(context, widget.drink.name, _quantity);
                 },
-                child: const Text('Tambah ke Keranjang'),
+                child: const Text('Tambah ke Keranjang', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(height: 20),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class DrinkInfoCard extends StatelessWidget {
+  final Drink drink;
+
+  const DrinkInfoCard({Key? key, required this.drink}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
+              drink.imageUrl,
+              height: 120,
+              width: 120,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.sports_esports, size: 80, color: Colors.grey),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            drink.name,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Rp ${drink.price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}',
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color(0xFF3B82F6),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

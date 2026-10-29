@@ -1,119 +1,185 @@
-
 import 'package:flutter/material.dart';
-import '../models/drink.dart';
 import '../models/cart_item.dart';
-import 'home_page.dart';
+import '../models/drink.dart';
 import 'cart_page.dart';
+import 'home_page.dart';
 import 'add_product.dart';
+import 'edit_product.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({Key? key}) : super(key: key);
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  State<MainScreen> createState() => MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-
   final List<CartItem> _cartItems = [];
 
-  final List<Drink> _drinkList = const [
+  final List<Drink> _drinkList = [
     Drink(
-      id: 'D01',
-      name: 'Espresso',
-      price: 18000,
-      imageUrl: 'assets/cafe.png',
+      id: 'd1',
+      name: 'PlayStation 5',
+      price: 8500000,
+      imageUrl: 'playstation.jpg',
     ),
     Drink(
-      id: 'D02',
-      name: 'Americano',
-      price: 20000,
-      imageUrl: 'assets/cafe.png',
+      id: 'd2',
+      name: 'Nintendo Switch',
+      price: 5200000,
+      imageUrl: 'nitendo.jpg',
     ),
     Drink(
-      id: 'D03',
-      name: 'Matcha Latte',
-      price: 25000,
-      imageUrl: 'assets/cafe.png',
+      id: 'd3',
+      name: 'Xbox Series X',
+      price: 8000000,
+      imageUrl: 'xbox.jpg',
     ),
     Drink(
-      id: 'D04',
-      name: 'Chocolate Frappe',
-      price: 27000,
-      imageUrl: 'assets/cafe.png',
+      id: 'd4',
+      name: 'Meta Quest 3 (VR)',
+      price: 8800000,
+      imageUrl: 'VR.jpg',
+    ),
+    Drink(
+      id: 'd5',
+      name: 'Steam Deck OLED',
+      price: 10500000,
+      imageUrl: 'steamdeck.jpg',
+    ),
+    Drink(
+      id: 'd6',
+      name: 'DualSense Controller',
+      price: 1250000,
+      imageUrl: 'controller.jpg',
     ),
   ];
 
-  void _addToCart(Drink drink, int quantity) {
-    if (quantity < 1) return;
-
+  void _addProduct(Drink newDrink) {
     setState(() {
-      final index = _cartItems.indexWhere(
-        (item) => item.drink.id == drink.id,
-      );
+      _drinkList.add(newDrink);
+    });
+  }
 
+  void _updateProduct(Drink updatedDrink) {
+    setState(() {
+      final index = _drinkList.indexWhere((drink) => drink.id == updatedDrink.id);
       if (index != -1) {
-        _cartItems[index].quantity += quantity;
-      } else {
-        _cartItems.add(
-          CartItem(
-            drink: drink,
-            quantity: quantity,
-          ),
-        );
+        _drinkList[index] = updatedDrink;
       }
     });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${drink.name} ditambahkan ke keranjang'),
+  void _deleteProduct(String id) {
+    setState(() {
+      _drinkList.removeWhere((drink) => drink.id == id);
+    });
+  }
+
+  void _navigateToAddPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddProductPage(
+          onSave: (Drink newDrink) {
+            _addProduct(newDrink);
+          },
+        ),
       ),
     );
   }
 
+  void _navigateToEditPage(BuildContext context, Drink drinkToEdit) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProductPage(
+          existingDrink: drinkToEdit,
+          onSave: (Drink updatedDrink) {
+            _updateProduct(updatedDrink);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _addToCart(Drink drink, int quantity) {
+    setState(() {
+      final existingIndex = _cartItems.indexWhere((item) => item.drink.id == drink.id);
+      if (existingIndex != -1) {
+        _cartItems[existingIndex].quantity += quantity;
+      } else {
+        _cartItems.add(CartItem(drink: drink, quantity: quantity));
+      }
+    });
+  }
+
   void _removeFromCart(String drinkId) {
     setState(() {
-      _cartItems.removeWhere(
-        (item) => item.drink.id == drinkId,
-      );
+      _cartItems.removeWhere((item) => item.drink.id == drinkId);
+    });
+  }
+
+  void _clearCart() {
+    setState(() {
+      _cartItems.clear();
+    });
+  }
+
+  List<Widget> _buildPages() {
+    return [
+      HomePage(
+        drinkList: _drinkList,
+        onAddToCart: _addToCart,
+        onAdd: () {
+          _navigateToAddPage(context);
+        },
+        onEdit: (Drink drink) {
+          _navigateToEditPage(context, drink);
+        },
+        onDelete: _deleteProduct,
+      ),
+      CartPage(
+        cartItems: _cartItems,
+        onRemoveFromCart: _removeFromCart,
+        onClearCart: _clearCart,
+      ),
+    ];
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final pages = _buildPages();
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          HomePage(
-            drinkList: _drinkList,
-            onAddToCart: _addToCart,
-          ),
-          CartPage(
-            cartItems: _cartItems,
-            onRemoveFromCart: _removeFromCart,
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFF0F172A),
+      body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        selectedItemColor: Colors.blue,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_cafe),
-            label: 'Menu',
+        backgroundColor: const Color(0xFF1E293B),
+        selectedItemColor: const Color(0xFF3B82F6),
+        unselectedItemColor: const Color(0xFF94A3B8),
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.sports_esports),
+            label: 'Katalog',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
+            icon: Badge(
+              label: Text(_cartItems.length.toString()),
+              isLabelVisible: _cartItems.isNotEmpty,
+              child: const Icon(Icons.shopping_cart),
+            ),
             label: 'Keranjang',
           ),
         ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
